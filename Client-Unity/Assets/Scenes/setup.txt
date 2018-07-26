@@ -1,0 +1,16 @@
+Setup:
+- Canvas -> Button -> On Click()
+-- Set Graph2 GameObject from GraphHolder
+-- Choose action to be Grapher2.Graph.
+
+- GraphHolder -> Graph2 -> Grapher 2(script)
+-- Player is Camera from GameObject Player -> Camera
+-- Canvas is GameObject Canvas
+-- Main Camara is GameObject Main Camera from scene
+
+- Player -> Make Lines (script)
+-- Place line holders from GraphHolder on each.
+-- Must have Player Movement attached.
+
+- Materials for everything is on Objects folder and every material has the name of the GameObject it's made for.
+- Particle from Grapher2 GameObject MUST have GraphParticleMat in Graph2 -> Particle System - > Renderer -> Material. For optimization. 
