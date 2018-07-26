@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR;
 
 public class GridControll : MonoBehaviour {
 
@@ -22,6 +23,8 @@ public class GridControll : MonoBehaviour {
     public InputField zMaxRange;
     // Grapher GameObject
     public GameObject Grapher;
+    // VR Settings
+    private bool VRFlag = false;
 
     // Functions to enable/disable gridlines.
     public void IOxGrid()
@@ -86,4 +89,11 @@ public class GridControll : MonoBehaviour {
         zMaxRange.text = Grapher.GetComponent<Grapher2>().limSupZ.ToString();
     }
 
+    // Function to enable and disable VR Function.
+    public void IOVR()
+    {
+        XRSettings.LoadDeviceByName("cardboard");
+        VRFlag = !VRFlag;
+        XRSettings.enabled = VRFlag;
+    }
 }
