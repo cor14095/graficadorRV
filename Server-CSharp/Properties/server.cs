@@ -4,7 +4,6 @@ using System.CodeDom.Compiler;
 using System.Threading;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using Microsoft.CSharp;
 using System.Net;
@@ -68,22 +67,25 @@ namespace ConsoleApplication1
                 Console.WriteLine("Receiving Data");
             
                 response = "515 confirmed task -- calculate: " + data;
-                //Console.WriteLine(response);
+                Console.WriteLine(response);
                 sendBytes = Encoding.ASCII.GetBytes(response);
                 // Tell the client that we have started.
                 clientSocket.Send(sendBytes);
-               
-                CodeSnippetCompileUnit compileUnit = new CodeSnippetCompileUnit(data);
-                CodeDomProvider provider = new CSharpCodeProvider();
+
+
+                Console.WriteLine("Compiling steps...");
+                CodeSnippetCompileUnit compileUnit = new CodeSnippetCompileUnit(data); Console.WriteLine("\t1...");
+                CodeDomProvider provider = new CSharpCodeProvider(); Console.WriteLine("\t2...");
                 // Compile the parameters.
-                CompilerParameters cParameters = new CompilerParameters();
+                CompilerParameters cParameters = new CompilerParameters(); Console.WriteLine("\t3...");
                 // Generate a compiled version of everything.
-                CompilerResults results = provider.CompileAssemblyFromDom(cParameters, compileUnit);
+                CompilerResults results = provider.CompileAssemblyFromDom(cParameters, compileUnit); Console.WriteLine("\t4...");
                 // Get the type for method. 
-                Type type = results.CompiledAssembly.GetType("MyType");
-                MethodInfo method = type.GetMethod("Evaluate");
+                Type type = results.CompiledAssembly.GetType("test.MyType"); Console.WriteLine("\t5...");
+                MethodInfo method = type.GetMethod("Evaluate", BindingFlags.Static | BindingFlags.Public); Console.WriteLine("\t6...");
+                Console.WriteLine("Compiling successful!");
 
-
+                Console.WriteLine("Evaluation start...");
                 while (data2 != "quit")
                 {
                    // Console.WriteLine("________________________");
@@ -92,14 +94,16 @@ namespace ConsoleApplication1
                     data2 = System.Text.Encoding.ASCII.GetString(msg2);
                     int index = data2.IndexOf("~");
                     if (index > 0)
+                        //Console.WriteLine(data2);
                         data2 = data2.Substring(0, index);
-                    //Console.WriteLine(data2);
+                        //Console.WriteLine(data2);
                     if (data2.IndexOf("quit") > 0 )
                     {
                         Console.WriteLine("done");
                         break;
                     }
-                    
+
+                    //Console.WriteLine(data2);
                     string data3 = data2.Split('$')[1];
                 
                     var ps = data3.Split('@');
@@ -111,20 +115,17 @@ namespace ConsoleApplication1
                     var py = float.Parse(ps[2],
                         System.Globalization.CultureInfo.InvariantCulture.NumberFormat);
                 
-                    var p = (float) method.Invoke(null, new object[] {px,pz,py });
+                    var p = (double) method.Invoke(null, new object[] {px,pz,py });
                 
                     response2 = p.ToString();
                     sendBytes2 = Encoding.ASCII.GetBytes(response2);
                     clientSocket.Send(sendBytes2);
-                   // Console.WriteLine(" - Responding: " + response2);
+                    //Console.WriteLine(" - Responding: " + response2);
                 }
-                
-               
-
             }
             catch (Exception ex)
             {
-                Console.WriteLine(" >> " + ex.ToString());
+                Console.WriteLine("End Of evaluation.");
             }
            
         }

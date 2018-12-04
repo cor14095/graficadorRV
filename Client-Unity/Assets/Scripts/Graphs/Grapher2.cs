@@ -83,24 +83,36 @@ public class Grapher2 : MonoBehaviour {
         //Debug.Log(s);
         // Method 2 start
         string source = @"
-            class MyType
+            using System;
+            using System.Collections;
+            using System.Collections.Generic;
+
+            namespace test
             {
-                public static float Evaluate(<!parameters!>)
+                public class MyType
                 {
-                    return (float) <!expression!>;
+                    public static double Evaluate(float x, float y, float z)
+                    {
+                        return (double) <!expression!>;
+                    }
                 }
             }
             ";
         // Initialice parameters.
-        string parameters = "float x, float y, float z";
         string expression = s;
         // Replace parameters in source.
-        string finalSource = source.Replace("<!parameters!>", parameters).Replace("<!expression!>", expression);
+        string finalSource = source.Replace("<!expression!>", expression);
         //Debug.Log(finalSource);
         TcpClient tcpclnt = new TcpClient();
         try {
+            // Deploy IP - c5.xlarge
+            var ip = "34.205.15.170";
+            // Development IP - t2.micro
+            //var ip = "18.208.138.62";
+            // Localhost testings
+            //var ip = "localhost";
+
             var port = 8081;
-            var ip = "localhost";
             tcpclnt.Connect(ip, port);
 
             string str = "212 $ " + finalSource;
@@ -132,6 +144,7 @@ public class Grapher2 : MonoBehaviour {
 
         // Do Work...
         var initTime = Time.realtimeSinceStartup;
+        int msgLost = 0;
         Debug.Log("Calculate graph points started.");
         for (var i = 0; i < pointsArray.Length; i++) {
             var p = points[i].position;
@@ -169,7 +182,15 @@ public class Grapher2 : MonoBehaviour {
             if (response.Length >= 1)
             {
                 //Debug.Log(response);
-                p.y = (float.Parse(response));
+                try
+                {
+                    p.y = (float.Parse(response));
+                }
+                catch (FormatException e)
+                {
+                    //Debug.Log(response);
+                    msgLost++;
+                }
             }
 
             //p.y = BitConverter.ToSingle(BitConverter.IsLittleEndian? Array.Reverse(bb) : bb, 0);
@@ -198,6 +219,7 @@ public class Grapher2 : MonoBehaviour {
         
         var endTime = Time.realtimeSinceStartup;
         Debug.Log("Calculate graph points ended. took: " + (endTime - initTime) + " seconds for: " + pointsArray.Length + "points.");
+        Debug.Log("Messages lost: " + msgLost.ToString() + " of " + pointsArray.Length.ToString() + " - (" + (msgLost * 100 / (double) pointsArray.Length).ToString() + "%)");
         GetComponent<ParticleSystem>().SetParticles(pointsArray, pointsArray.Length);
 
     }

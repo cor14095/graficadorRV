@@ -169,7 +169,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.61764705, b: 0.0042596003, a: 1}
+  m_Color: {r: 0.4287018, g: 0.75, b: 0.386, a: 0.686}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -588,7 +588,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.686, b: 0.0042596003, a: 1}
+  m_Color: {r: 0.4287018, g: 0.75, b: 0.386, a: 0.686}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -1371,7 +1371,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0, g: 0.61764705, b: 0.0042596003, a: 1}
+  m_Color: {r: 0.4287018, g: 0.75, b: 0.386, a: 0.686}
   m_RaycastTarget: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
@@ -2995,7 +2995,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: Immers-2-Learn
+  m_Text: Graficador RV
 --- !u!222 &1646424891
 CanvasRenderer:
   m_ObjectHideFlags: 0
