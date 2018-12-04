@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Experimental.UIElements;
 using System;
 using System.IO;
@@ -19,8 +21,10 @@ public class Grapher2 : MonoBehaviour {
     public GameObject player;
     public GameObject canvas;
     public GameObject mainCamara;
+    public Text loadBar;
     private bool playerActive = false;
     private int currentResolution;
+    private int msgLost;
     private float currentlimInf;
     private float currentlimSup;
     private float currentlimInfZ;
@@ -31,6 +35,7 @@ public class Grapher2 : MonoBehaviour {
     private ParticleSystem.Particle[] pointsArray;
     private ParticleSystem.Particle point;
     private Vector3[] cubeArray;
+    private TcpClient tcpclnt;
 
     // Use this for initialization
 
@@ -41,6 +46,7 @@ public class Grapher2 : MonoBehaviour {
         float x = limInf;
         float y = 0;
         float z = limInfZ;
+        int space = 2;
 
         // Initialize stuff.
         currentResolution = resolution;
@@ -65,13 +71,103 @@ public class Grapher2 : MonoBehaviour {
                     points.Add(point);
                 //    y += 1;
                 //} while (y < 1);
-                z += 1;
+                z += space;
             } while (z < limSupZ);
             z = limInfZ;
-            x += 1;
+            x += space;
         } while (x < limSup);
         //Debug.Log("Create points ended.");
         doGraph();
+    }
+
+    public IEnumerator TCPRequest()
+    {
+        var initTime = Time.realtimeSinceStartup;
+        Debug.Log("Calculate graph points started.");
+        msgLost = 0;
+        for (var i = 0; i < pointsArray.Length; i++)
+        {
+            var p = points[i].position;
+            //f(x) = x
+
+            // Method 2 evaluation
+            //Send the code 777 + p.x , p.z , p.y 
+            //Wait for return on code 515
+
+            string strString = "777$" + p.x + "@" + p.z + "@" + p.y + '~';
+            char[] str = strString.ToCharArray();
+            Stream stm = tcpclnt.GetStream();
+
+            ASCIIEncoding asen = new ASCIIEncoding();
+            byte[] ba = asen.GetBytes(str);
+            stm.Write(ba, 0, ba.Length);
+
+            byte[] bb = new byte[20];
+            int k = stm.Read(bb, 0, 20);
+            // Debug.Log(k);
+            string response = "";
+
+            for (int ii = 0; ii < k; ii++)
+            {
+
+                if (!char.IsWhiteSpace(Convert.ToChar(bb[ii])))
+                {
+                    response += Convert.ToChar(bb[ii]);
+                }
+            }
+
+            response = response.Trim('\0');
+            response = response.Trim();
+
+            if (response.Length >= 1)
+            {
+                //Debug.Log(response);
+                try
+                {
+                    p.y = (float.Parse(response));
+                }
+                catch (FormatException e)
+                {
+                    //Debug.Log(response);
+                    msgLost++;
+                }
+            }
+
+            //p.y = BitConverter.ToSingle(BitConverter.IsLittleEndian? Array.Reverse(bb) : bb, 0);
+
+            // p.y = (float)method.Invoke(null, new object[] { p.x, p.z, p.y });
+
+            // Debug.Log(p.y);
+            if (float.IsInfinity(p.y) || float.IsNaN(p.y))
+            {
+                p.y = 0.0f;
+                p.x = 0.0f;
+                p.z = 0.0f;
+            }
+
+            if (p.y > 50) { p.y = 50.0f; }
+            if (p.y < -50) { p.y = -50.0f; }
+
+            pointsArray[i].position = p;
+            loadBar.text = ((i / (pointsArray.Length * 1.0f)) * 100f).ToString("F2") + "%";
+            GetComponent<ParticleSystem>().SetParticles(pointsArray, pointsArray.Length);
+
+            // Give's a frame for the player.
+            yield return null;
+        }
+
+        string str2 = "quit";
+        Stream stm2 = tcpclnt.GetStream();
+
+        ASCIIEncoding asen2 = new ASCIIEncoding();
+        byte[] ba2 = asen2.GetBytes(str2);
+
+        stm2.Write(ba2, 0, ba2.Length);
+        tcpclnt.Close();
+
+        var endTime = Time.realtimeSinceStartup;
+        Debug.Log("Calculate graph points ended. took: " + (endTime - initTime) + " seconds for: " + pointsArray.Length + "points.");
+        Debug.Log("Messages lost: " + msgLost.ToString() + " of " + pointsArray.Length.ToString() + " - (" + (msgLost * 100 / (double)pointsArray.Length).ToString() + "%)");
     }
 
     private void doGraph()
@@ -103,14 +199,14 @@ public class Grapher2 : MonoBehaviour {
         // Replace parameters in source.
         string finalSource = source.Replace("<!expression!>", expression);
         //Debug.Log(finalSource);
-        TcpClient tcpclnt = new TcpClient();
+        tcpclnt = new TcpClient();
         try {
             // Deploy IP - c5.xlarge
-            var ip = "34.205.15.170";
+            //var ip = "34.205.15.170";
             // Development IP - t2.micro
             //var ip = "18.208.138.62";
             // Localhost testings
-            //var ip = "localhost";
+            var ip = "localhost";
 
             var port = 8081;
             tcpclnt.Connect(ip, port);
@@ -130,11 +226,7 @@ public class Grapher2 : MonoBehaviour {
             for (int i = 0; i < k; i++) {
                 response += Convert.ToChar(bb[i]);
             }
-
-        
-           
         }
-        
         catch (Exception e)
         {
             Debug.Log("Error " + e);
@@ -143,84 +235,7 @@ public class Grapher2 : MonoBehaviour {
         pointsArray = points.ToArray();
 
         // Do Work...
-        var initTime = Time.realtimeSinceStartup;
-        int msgLost = 0;
-        Debug.Log("Calculate graph points started.");
-        for (var i = 0; i < pointsArray.Length; i++) {
-            var p = points[i].position;
-            //f(x) = x
-
-            // Method 2 evaluation
-            //Send the code 777 + p.x , p.z , p.y 
-            //Wait for return on code 515
-
-            string strString = "777$" + p.x + "@" + p.z + "@" + p.y + '~';
-            char[] str = strString.ToCharArray();
-            Stream stm = tcpclnt.GetStream();
-                        
-            ASCIIEncoding asen= new ASCIIEncoding();
-            byte[] ba=asen.GetBytes(str);
-            stm.Write(ba,0,ba.Length);
-
-            byte[] bb=new byte[20];
-            int k=stm.Read(bb,0,20);
-           // Debug.Log(k);
-            string response = "";
-
-            for (int ii = 0; ii < k; ii++)
-            {
-
-                if (!char.IsWhiteSpace(Convert.ToChar(bb[ii])))
-                {
-                    response += Convert.ToChar(bb[ii]);
-                }
-            }
-            
-            response = response.Trim('\0');
-            response = response.Trim();
-           
-            if (response.Length >= 1)
-            {
-                //Debug.Log(response);
-                try
-                {
-                    p.y = (float.Parse(response));
-                }
-                catch (FormatException e)
-                {
-                    //Debug.Log(response);
-                    msgLost++;
-                }
-            }
-
-            //p.y = BitConverter.ToSingle(BitConverter.IsLittleEndian? Array.Reverse(bb) : bb, 0);
-
-           // p.y = (float)method.Invoke(null, new object[] { p.x, p.z, p.y });
-
-            // Debug.Log(p.y);
-            if (float.IsInfinity(p.y) || float.IsNaN(p.y))
-            {
-                p.y = 0.0f;
-            }
-
-            if (p.y > 50) { p.y = 50.0f; }
-            if (p.y < -50) { p.y = -50.0f; }
-
-            pointsArray[i].position = p;
-        }
-        string str2 = "quit";
-        Stream stm2 = tcpclnt.GetStream();
-                        
-        ASCIIEncoding asen2= new ASCIIEncoding();
-        byte[] ba2=asen2.GetBytes(str2);
-            
-        stm2.Write(ba2,0,ba2.Length);
-        tcpclnt.Close();
-        
-        var endTime = Time.realtimeSinceStartup;
-        Debug.Log("Calculate graph points ended. took: " + (endTime - initTime) + " seconds for: " + pointsArray.Length + "points.");
-        Debug.Log("Messages lost: " + msgLost.ToString() + " of " + pointsArray.Length.ToString() + " - (" + (msgLost * 100 / (double) pointsArray.Length).ToString() + "%)");
-        GetComponent<ParticleSystem>().SetParticles(pointsArray, pointsArray.Length);
+        StartCoroutine(TCPRequest());
 
     }
 
@@ -252,11 +267,6 @@ public class Grapher2 : MonoBehaviour {
             currentlimInfZ != limInfZ || currentlimSupZ != limSupZ || currentz_space != z_space || points == null)
         {
             Graph();
-        }
-        if (Input.GetKeyDown(KeyCode.Z)) {
-            playerActive = !playerActive;
-            player.SetActive(playerActive);
-            mainCamara.SetActive(!playerActive);
         }
     }
 
